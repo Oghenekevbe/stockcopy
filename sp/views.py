@@ -24,11 +24,6 @@ class PortfolioListView(ListView):
     template_name = 'portfolio_list.html'
     context_object_name = 'portfolios'
 
-# class PortfolioDetailView(DetailView):
-#     model = Portfolio
-#     template_name = 'portfolio_detail.html'
-#     context_object_name = 'portfolio'
-
 
 
 class PortfolioDetailView(DetailView):
@@ -76,9 +71,4 @@ class PortfolioStockListView(ListView):
         context = super().get_context_data(**kwargs)
         context['portfolio'] = get_object_or_404(Portfolio, id=self.kwargs['portfolio_id'])
         return context
-
-class StockTransactionListView(ListView):
-    model = StockTransaction
-    template_name = 'stock_transaction_list.html'
-    context_object_name = 'transactions'
 

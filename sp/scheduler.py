@@ -2,7 +2,7 @@ import schedule
 import time
 import random
 from datetime import datetime
-from .models import StockTransaction, Stock, Portfolio
+from sp.models import StockTransaction, Stock, Portfolio
 
 
 def create_transaction():

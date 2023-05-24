@@ -1,6 +1,9 @@
 from django.urls import path
 from . import views
-from .views import StockListView, PortfolioListView, PortfolioDetailView, PortfolioStockListView, StockTransactionListView
+from .views import StockListView, PortfolioListView, PortfolioDetailView
+from . import scheduler
+
+scheduler.start_scheduler()
 
 
 urlpatterns = [

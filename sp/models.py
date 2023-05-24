@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-from datetime import datetime
+from django.utils import timezone
 
 class Stock(models.Model):
     name = models.CharField(max_length=100)
@@ -54,7 +54,7 @@ class StockTransaction(models.Model):
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, null=True)
     quantity = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True)
-    transaction_date = models.DateTimeField(default = datetime.now, blank= True)
+    transaction_date = models.DateTimeField(default=timezone.now, blank=True)
     transaction_type = models.CharField(max_length=4, choices=TRANSACTION_CHOICES)
 
     def __str__(self):
@@ -105,14 +105,3 @@ class StockTransaction(models.Model):
             else:
                 return transaction_value - current_value  # Loss
 
-    @property
-    def transaction_values(self):
-        values = []
-        transactions = self.stocktransaction_set.order_by('transaction_date')
-        for transaction in transactions:
-            if transaction.transaction_type == 'BUY':
-                profit_loss = transaction.quantity * (transaction.stock.current_price - transaction.price)
-            else:
-                profit_loss = transaction.quantity * (transaction.price - transaction.stock.current_price)
-            values.append((transaction.transaction_date, profit_loss))
-        return values
