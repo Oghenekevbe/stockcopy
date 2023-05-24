@@ -15,6 +15,7 @@ class Portfolio(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
     stocks = models.ManyToManyField("Stock", through='PortfolioStock')
+    wallet = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def count_portfolio(self):
         portfolio_count = self.stocks.count()
@@ -28,7 +29,7 @@ class Portfolio(models.Model):
         return total_value
 
     def __str__(self):
-        return f"Portfolio owned by {self.owner}. Total Value: {self.value}"
+        return f"Portfolio owned by {self.owner}. Total Value: N{self.value}. Wallet Balance N{self.wallet}"
 
     
 
@@ -39,7 +40,7 @@ class PortfolioStock(models.Model):
     purchase_price = models.DecimalField(max_digits=10, decimal_places=2, null=True)
 
     def __str__(self):
-        return f'{self.stock.name} in {self.portfolio.name} - Quantity: {self.quantity}, Purchase Price: {self.purchase_price}'
+        return f'{self.stock.name} in {self.portfolio.name}, owned by {self.portfolio.owner} - Quantity: {self.quantity}, Purchase Price: {self.purchase_price}'
 
 
 
@@ -57,5 +58,61 @@ class StockTransaction(models.Model):
     transaction_type = models.CharField(max_length=4, choices=TRANSACTION_CHOICES)
 
     def __str__(self):
-        return f'Transaction for {self.stock.name} - Quantity: {self.quantity}, Price: {self.price}, Date: {self.transaction_date}, Type: {self.get_transaction_type_display()}'
+        return f'Transaction for {self.portfolio.owner} - {self.stock.name} - Quantity: {self.quantity}, Price: {self.price}, Date: {self.transaction_date}, Type: {self.get_transaction_type_display()}'
+    
+    def save(self, *args, **kwargs):
+        wallet_balance = self.portfolio.wallet
 
+        if self.transaction_type == 'BUY' and self.price * self.quantity > wallet_balance:
+            raise ValueError("Insufficient funds in the wallet to perform the transaction.")
+
+        super().save(*args, **kwargs)
+        
+        if self.transaction_type == 'BUY':
+            portfolio_stock = self.portfolio.portfoliostock_set.filter(stock=self.stock).first()
+            if portfolio_stock:
+                portfolio_stock.quantity += self.quantity
+                portfolio_stock.save()
+            else:
+                PortfolioStock.objects.create(stock=self.stock, portfolio=self.portfolio, quantity=self.quantity)
+            
+            # Deduct transaction value from the wallet balance
+            self.portfolio.wallet -= self.price * self.quantity
+            self.portfolio.save()
+        elif self.transaction_type == 'SELL':
+            portfolio_stock = self.portfolio.portfoliostock_set.filter(stock=self.stock).first()
+            if portfolio_stock:
+                portfolio_stock.quantity -= self.quantity
+                portfolio_stock.save()
+            
+            # Add transaction value to the wallet balance
+            self.portfolio.wallet += self.price * self.quantity
+            self.portfolio.save()
+
+
+    @property
+    def profit_loss(self):
+        current_value = self.stock.current_price * self.quantity
+        transaction_value = self.price * self.quantity
+        if self.transaction_type == 'BUY':
+            if transaction_value > current_value:
+                return current_value - transaction_value   # Loss
+            else:
+                return current_value - transaction_value  # Profit
+        elif self.transaction_type == 'SELL':
+            if transaction_value > current_value:
+                return transaction_value - current_value # Profit
+            else:
+                return transaction_value - current_value  # Loss
+
+    @property
+    def transaction_values(self):
+        values = []
+        transactions = self.stocktransaction_set.order_by('transaction_date')
+        for transaction in transactions:
+            if transaction.transaction_type == 'BUY':
+                profit_loss = transaction.quantity * (transaction.stock.current_price - transaction.price)
+            else:
+                profit_loss = transaction.quantity * (transaction.price - transaction.stock.current_price)
+            values.append((transaction.transaction_date, profit_loss))
+        return values

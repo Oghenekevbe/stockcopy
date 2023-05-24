@@ -1,17 +1,49 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block content %}
   <h1>Portfolio Detail</h1>
   <p><strong>Name:</strong> {{ portfolio.name }}</p>
   <p><strong>Owner:</strong> {{ portfolio.owner.username }}</p>
+  <p><strong>Portfolio Value:</strong> N{{ portfolio.value|floatformat }}</p>
+  <p><strong>Wallet Balance:</strong> N{{ portfolio.wallet|floatformat }}</p>
   <h2>Stocks:</h2>
+
+  <div>
+    <img src="data:image/png;base64,{{ transaction_history|base64_encode }}" alt="Transaction History">
+  </div>
+
   <ul>
     {% for stock in portfolio.stocks.all %}
-      <li>{{ stock.name }} - {{ stock.symbol }}</li>
+      <li>{{ stock.name }} - {{ stock.symbol }} <span class="stock-value"> - Current Value: N{{ stock.current_price }}</span></li>
     {% empty %}
       <li>No stocks in this portfolio.</li>
     {% endfor %}
   </ul>
+
+  <h2>Transaction Details:</h2>
+  <ul>
+    {% for transaction in portfolio.stocktransaction_set.all %}
+      <li>
+        Transaction Type: {{ transaction.get_transaction_type_display }}<br>
+        Quantity: {{ transaction.quantity }}<br>
+        Price: N{{ transaction.price }}<br>
+      {% if transaction.profit_loss < 0 %}
+        Loss: N{{transaction.profit_loss|floatformat}}
+      {% elif transaction.profit_loss > 0%}
+      Profit: N{{transaction.profit_loss|floatformat}}
+      {% elif transaction.profit_loss == 0 %}
+      No Profit or loss
+      {% endif %}
+      <br>
+      </li>
+    {% empty %}
+      <li>No transactions in this portfolio.</li>
+    {% endfor %}
+  </ul>
+
+
+  
   <p><a href="{% url 'portfolio_list' %}">Back to Portfolio List</a></p>
 {% endblock %}
