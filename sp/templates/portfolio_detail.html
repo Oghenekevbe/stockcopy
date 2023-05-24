@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+  <h1>Portfolio Detail</h1>
+  <p><strong>Name:</strong> {{ portfolio.name }}</p>
+  <p><strong>Owner:</strong> {{ portfolio.owner.username }}</p>
+  <h2>Stocks:</h2>
+  <ul>
+    {% for stock in portfolio.stocks.all %}
+      <li>{{ stock.name }} - {{ stock.symbol }}</li>
+    {% empty %}
+      <li>No stocks in this portfolio.</li>
+    {% endfor %}
+  </ul>
+  <p><a href="{% url 'portfolio_list' %}">Back to Portfolio List</a></p>
+{% endblock %}

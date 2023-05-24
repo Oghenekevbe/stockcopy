@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+  <h1>Portfolio List</h1>
+  <ul>
+    {% for portfolio in portfolios %}
+      <li>
+        <strong>Portfolio:</strong> {{ portfolio.name }}<br>
+        <strong>Owner:</strong> {{ portfolio.owner.username }}<br>
+        <a href="{% url 'portfolio_detail' portfolio.pk %}">View Details</a>
+      </li>
+    {% endfor %}
+  </ul>
+{% endblock %}

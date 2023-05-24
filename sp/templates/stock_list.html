@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+  <h1>Stock List</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Symbol</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for stock in stocks%}
+        <tr>
+          <td>{{ stock.name }}</td>
+          <td>{{ stock.symbol }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
