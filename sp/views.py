@@ -41,6 +41,18 @@ class PortfolioListView(ListView):
     template_name = 'portfolio_list.html'
     context_object_name = 'portfolios'
 
+    def get_context_data(self, **kwargs):
+        if self.request.user.is_superuser:
+            portfolios = Portfolio.objects.all()
+        else:
+            portfolios = Portfolio.objects.filter(owner=self.request.user)
+
+        context = super().get_context_data(**kwargs)
+        context["portfolios"] = portfolios
+        return context
+
+
+
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Decimal):

@@ -2,14 +2,35 @@
 {% load static %}
 
 {% block content %}
-  <h1>Portfolio List</h1>
-  <ul>
-    {% for portfolio in portfolios %}
-      <li>
-        <strong>Portfolio:</strong> {{ portfolio.name }}<br>
-        <strong>Owner:</strong> {{ portfolio.owner.username }}<br>
-        <a href="{% url 'portfolio_detail' portfolio.pk %}">View Details</a>
-      </li>
-    {% endfor %}
-  </ul>
+<div class="container">
+  <div class="row">
+    <div class="col">
+      <h3>Portfolio List</h3>
+      <hr style="color: red;">
+      {% if user.is_authenticated %}
+        {% if user.is_superuser %}
+          <ul>
+            {% for portfolio in portfolios %}
+            <li>
+              <strong>Portfolio:</strong> {{ portfolio.name }}<br>
+              <strong>Owner:</strong> {{ portfolio.owner.username }}<br>
+              <a href="{% url 'portfolio_detail' portfolio.pk %}">View Details</a>
+            </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <ul>
+            {% for portfolio in portfolios %}
+            <li>
+              <strong>Portfolio:</strong> {{ portfolio.name }}<br>
+              <strong>Owner:</strong> {{ portfolio.owner.username }}<br>
+              <a href="{% url 'portfolio_detail' portfolio.pk %}">View Details</a>
+            </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>
 {% endblock %}
