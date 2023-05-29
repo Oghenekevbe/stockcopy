@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Email Verification</h1>
+    <p>{{ message }}</p>
+    <p>You can now proceed to <a href="{% url 'login' %}">login</a> to access your account.</p>
+{% endblock %}

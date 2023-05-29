@@ -3,6 +3,8 @@
 {% load custom_filters %}
 
 {% block content %}
+<script src="{% static 'js/transaction.js' %}"></script>
+
   <h1>Portfolio Detail</h1>
   <p><strong>Name:</strong> {{ portfolio.name }}</p>
   <p><strong>Owner:</strong> {{ portfolio.owner.username }}</p>
@@ -46,4 +48,8 @@
 
   
   <p><a href="{% url 'portfolio_list' %}">Back to Portfolio List</a></p>
-{% endblock %}
+
+
+
+
+  {% endblock %}

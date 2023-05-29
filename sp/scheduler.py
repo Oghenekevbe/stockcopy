@@ -28,8 +28,8 @@ def create_transaction():
     transaction.save()
     print('Transaction created:', transaction)
 
-schedule.every(1).minutes.do(create_transaction)
+schedule.every(2).minutes.do(create_transaction)
 
 while True:
     schedule.run_pending()
-    time.sleep(1)
+    time.sleep(5)
