@@ -1,27 +1,35 @@
 from django.http import HttpResponse, JsonResponse,HttpResponseRedirect
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView, DetailView, CreateView
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from .models import Stock, Portfolio, PortfolioStock, StockTransaction,VerificationModel
+from .models import Stock, Portfolio, StockTransaction
 from matplotlib.figure import Figure
 import io
-from .forms import RegistrationForm, ForgotPasswordForm
+from .forms import RegistrationForm, ForgotPasswordForm, ResetPasswordForm, ChangePasswordForm, StockTransactionForm
 from django.forms.models import model_to_dict
 from decimal import Decimal
 import json
 from datetime import datetime
 from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.views import PasswordChangeView
+from django.urls import reverse_lazy
+from django.contrib.auth import authenticate #, login
+from django.contrib.auth.decorators import login_required
 
 
 
 # for email confirmation
-from django.contrib import messages
-from django.contrib.auth.models import User
+from django.template.loader import render_to_string
 from django.contrib.sites.shortcuts import get_current_site
-from django.core.mail import send_mail
-import random
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.core.mail import EmailMessage
+from .tokens import account_activation_token
+from django.contrib import messages
+from django.contrib.auth import get_user_model
+
 
 
 
@@ -140,124 +148,168 @@ class PortfolioDetailView(DetailView):
 
         return context
 
-class PortfolioStockListView(ListView):
-    model = PortfolioStock
-    template_name = 'portfolio_stock_list.html'
-    context_object_name = 'stocks'
+class StockTransactionView(CreateView):
+    form_class = StockTransactionForm
+    template_name = 'perform_stock_transaction.html'
 
-    def get_queryset(self):
-        portfolio = get_object_or_404(Portfolio, id=self.kwargs['portfolio_id'])
-        return portfolio.stocks.all()
+    def get(self, request):
+        form = self.form_class()
+        return render(request, self.template_name, {'form': form})
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['portfolio'] = get_object_or_404(Portfolio, id=self.kwargs['portfolio_id'])
-        return context
+    def post(self, request):
+        form = self.form_class(request.POST)
+        if form.is_valid():
+            transaction = form.save(commit=False)
+            portfolio = Portfolio.objects.get(owner=request.user)
+            transaction.portfolio = portfolio
+            transaction.save()
+            return redirect('portfolio_list')  # Redirect to the portfolio page or any other appropriate page
+
+        return render(request, self.template_name, {'form': form})
 
 
 
-#USER CREDENTIALS
+
+    #USER CREDENTIALS
 
 # View for user registration
 def register(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         form = RegistrationForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
             user.is_active = False
             user.save()
+            activateEmail(request, user, form.cleaned_data.get('email'))
+            return redirect('index')
 
-            token = str(random.random()).split('.')[1]
-            verification = VerificationModel.objects.create(user=user, token=token, is_verified=False)
+        else:
+            for error in list(form.errors.values()):
+                messages.error(request, error)
 
-            domain = get_current_site(request).domain
-            verification_link = f'http://{domain}/verify/{token}'
-
-            send_mail(
-                'Email Verification',
-                f'Please click the following link to verify your email: {verification_link}',
-                'noreply@example.com',
-                [user.email],
-                fail_silently=False,
-            )
-
-            messages.success(request, 'A confirmation email has been sent to your email address.')
-            return redirect('register')
     else:
         form = RegistrationForm()
 
-    return render(request, 'registration/register.html', {'form': form})
+    return render(
+        request=request,
+        template_name="registration/register.html",
+        context={"form": form}
+        )
+
+def activateEmail(request, user, to_email):
+    mail_subject = 'Activate your user account.'
+    message = render_to_string('registration/activate_account.html', {
+        'user': user.username,
+        'domain': get_current_site(request).domain,
+        'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+        'token': account_activation_token.make_token(user),
+        'protocol': 'https' if request.is_secure() else 'http'
+    })
+    email = EmailMessage(mail_subject, message, to=[to_email])
+    if email.send():
+        messages.success(request, f'Dear {user}, please go to you email {to_email} inbox and click on the received activation link to confirm and complete the registration. If not found, kindly check your spam folder.')
+    else:
+        messages.error(request, f'Problem sending confirmation email to {to_email}, check if you typed it correctly.')
 
 
-def verify(request, token):
+def activate(request, uidb64, token):
+    User = get_user_model()
     try:
-        verification = VerificationModel.objects.get(token=token)
-        verification.is_verified = True
-        verification.save()
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
 
-        messages.success(request, 'Your email has been verified. You can now log in.')
+    if user is not None and account_activation_token.check_token(user, token):
+        user.is_active = True
+        user.save()
+        messages.success(request, 'Your account has been activated!')
         return redirect('login')
+    else:
+        messages.error(request, 'Activation link is invalid or has expired.')
+        return redirect('index')
+    
 
-    except VerificationModel.DoesNotExist:
-        messages.error(request, 'Your verification was not successful. Please try again.')
-        return redirect('register')
 
 
 
+# Forgot password view
 def forgot_password(request):
     if request.method == 'POST':
-        email = request.POST.get('email')
-        try:
-            user = User.objects.get(email=email)
-            # Generate password reset token
-            token = str(random.random()).split('.')[1] 
-
-            # Save the token in the User model
-            user.verfificationmodel.token = token
-            user.verfificationmodel.save()
-
-            # Construct reset password URL
-            domain_name = get_current_site(request).domain
-            reset_url = f'http://{domain_name}/reset_password/{token}/'
-
-            # Send password reset email
-            send_mail(
-                'Password Reset',
-                f'Click the following link to reset your password: {reset_url}',
-                'NoReply@testing.com',
-                [email],
-                fail_silently=False,
-            )
-
-            return HttpResponse('A password reset link has been sent to your email address.')
-        except User.DoesNotExist:
-            message = 'Email does not exist in our system.'
-            return render(request, 'registration/forgot_password.html', {'message': message})
-    form = ForgotPasswordForm()
+        form = ForgotPasswordForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            User = get_user_model()
+            user = User.objects.filter(email=email).first()
+            if user:
+                # Perform password reset steps (e.g., send reset password email)
+                uid = urlsafe_base64_encode(force_bytes(user.pk))
+                token = account_activation_token.make_token(user)
+                reset_link = f"{get_current_site(request)}/reset_password/{uid}/{token}/"
+                message = render_to_string('registration/reset_password_email.html', {
+                    'user': user,
+                    'reset_link': reset_link,
+                })
+                email = EmailMessage(
+                    subject='Reset Password',
+                    body=message,
+                    to=[user.email]
+                )
+                email.send()
+                messages.success(request, 'An email with instructions to reset your password has been sent.')
+                return redirect('index')
+            else:
+                messages.error(request, 'The email address provided is not associated with any user account.')
+    else:
+        form = ForgotPasswordForm()
     return render(request, 'registration/forgot_password.html', {'form': form})
 
 
-def reset_password(request, token):
+# Reset password view
+def reset_password(request, uidb64, token):
+    User = get_user_model()
     try:
-        # Get CustomerProfile associated with the token
-        customer_profile = VerificationModel.objects.get(token=token)
+        uid = urlsafe_base64_decode(uidb64).decode()
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
 
-        # Check if token is valid
-        if customer_profile.token == token:
-            user = customer_profile.user
-            if request.method == 'POST':
-                # Perform password reset
-                password = request.POST['password1']
-                user.set_password(password)
+    if user is not None and account_activation_token.check_token(user, token):
+        if request.method == 'POST':
+            form = ResetPasswordForm(request.POST, user=user)
+            if form.is_valid():
+                new_password = form.cleaned_data['new_password1']
+                user.set_password(new_password)
                 user.save()
-                # Clear token in CustomerProfile model
-                customer_profile.token = ''
-                customer_profile.save()
+                messages.success(request, 'Your password has been reset. You may now log in with your new password.')
                 return redirect('login')
-            return render(request, 'registration/reset_password.html', {'token': token, 'form': PasswordResetForm()})
+            else:
+                for error in form.errors.values():
+                    messages.error(request, error)
         else:
-            message = 'Invalid token. Please try again.'
-            return render(request, 'index.html', {'message': message})
-    except VerificationModel.DoesNotExist:
-        message = 'Profile does not exist. Please try again.'
-        return render(request, 'index.html', {'message': message})
+            form = ResetPasswordForm(user=user)
+        return render(request, 'registration/reset_password.html', {'form': form})
+    else:
+        messages.error(request, 'Invalid or expired reset password link.')
+        return redirect('index')
+
+# Change password view
+@login_required
+def change_password(request):
+    user = request.user
+    if request.method == 'POST':
+        form = ChangePasswordForm(user, request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your password has been changed successfully.')
+            return redirect('login')
+        else:
+            for error in list(form.errors.values()):
+                messages.error(request, error)
+    else:
+        form = ChangePasswordForm(user)
+    return render(request, 'registration/change_password.html', {'form': form})
+
+
+def reset_password_email(request):
+    return render (request , 'reset-password_email.html')

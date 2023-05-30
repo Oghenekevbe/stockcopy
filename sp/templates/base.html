@@ -12,7 +12,8 @@
   <link rel="stylesheet" href="{% static 'css/base.css' %}">
 
   {% comment %} js {% endcomment %}
-  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.7/dist/umd/popper.min.js" integrity="sha384-zYPOMqeu1DAVkHiLqWBUTcbYfZ8osu1Nd6Z89ify25QV9guujx43ITvfi12/QExE" crossorigin="anonymous"></script>  <title>{% block title %}{% endblock title %}</title>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.7/dist/umd/popper.min.js" integrity="sha384-zYPOMqeu1DAVkHiLqWBUTcbYfZ8osu1Nd6Z89ify25QV9guujx43ITvfi12/QExE" crossorigin="anonymous"></script>
+  <title>{% block title %}{% endblock title %}</title>
 </head>
 
 <body>
@@ -28,38 +29,78 @@
           <li class="nav-item">
             <a class="nav-link active text-light" aria-current="page" href="/">Home</a>
           </li>
+          {% if user.is_authenticated %}
           <li class="nav-item">
-            <a href="{% url 'stock_list' %}" class="nav-link  text-light" >Companies</a>
+            <a href="{% url 'stock_list' %}" class="nav-link  text-light">Companies</a>
 
           </li>
           <li class="nav-item">
-            <a href="{% url 'portfolio_list' %}"class="nav-link  text-light">portfolio list</a>
+            <a href="{% url 'portfolio_list' %}" class="nav-link  text-light">portfolio list</a>
 
           </li>
+          </li>
+  
           <li class="nav-item dropdown mx-3">
             <a class="nav-link dropdown-toggle text-light" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" style=" background-color: rgba(93, 156, 89,0.2); border-radius: 5px;">
-                Welcome, {{ request.user.username }}
+              Welcome,
+              {{ request.user.username }}
             </a>
             <ul class="dropdown-menu" style="background-color: rgba(0, 0, 0, 0.5);">
-                <li><a href="{% url 'register' %}" style="background-color: rgba(0, 0, 0, 0.5);" class="dropdown-item text-light">Register</a></li>
-                <li><a href="{% url 'login' %}" style="background-color: rgba(0, 0, 0, 0.5);" class="dropdown-item text-light">Login</a></li>
-                <li><a href="{% url 'forgot_password' %}" style="background-color: rgba(0, 0, 0, 0.5);" class="dropdown-item text-light">Forgot Password</a></li>
-                <li><hr class="dropdown-divider" ></li>
+              <li><a href="{% url 'change_password' %}" style="background-color: rgba(0, 0, 0, 0.5);" class="dropdown-item text-light">Change Password</a></li>
+              <li>
+                <hr class="dropdown-divider">
+              </li>
 
-                <li><a href="{% url 'logout' %}" style="background-color: rgba(0, 0, 0, 0.5);" class="dropdown-item text-light">Log Out</a></li>
+              <li><a href="{% url 'logout' %}" style="background-color: rgba(0, 0, 0, 0.5);" class="dropdown-item text-light">Log Out</a></li>
             </ul>
-        </li>
-        
+          </li>
+
+            {% if user.is_superuser %}
+            <li class="nav-item">
+                <a href="{% url 'perform_stock_transaction' %}" class="nav-link  text-light">New Transaction</a>
+
+            </li>
+
+            {% endif %}
+          {% else %}
+          <li class="nav-item dropdown mx-3">
+            <a class="nav-link dropdown-toggle text-light" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" style=" background-color: rgba(93, 156, 89,0.2); border-radius: 5px;">
+              Welcome Guest
+            </a>
+            <ul class="dropdown-menu" style="background-color: rgba(0, 0, 0, 0.5);">
+              <li><a href="{% url 'register' %}" style="background-color: rgba(0, 0, 0, 0.5);" class="dropdown-item text-light">Register</a></li>
+              <li><a href="{% url 'login' %}" style="background-color: rgba(0, 0, 0, 0.5);" class="dropdown-item text-light">Login</a></li>
+              <hr class="dropdown-divider">
+
+              <li><a href="{% url 'forgot_password' %}" style="background-color: rgba(0, 0, 0, 0.5);" class="dropdown-item text-light">Forgot Password</a></li>
+              <li>
+              </li>
+
+            </ul>
+          </li>
+          {% endif %}
+
         </ul>
       </div>
     </div>
   </nav>
-<div class="container mt-2 mb-2" style="min-height: 120vh;">
-
+  <div class="container mt-2 mb-2" style="min-height: 120vh;">
+    <div id='messages'>
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{message.tags}} alert-dismissible fade show" role="alert">
+    
+          <strong>{{message}}</strong>
+    
+          <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+      </div>
     {% block content %}
     {% endblock content %}
 
-</div>
+  </div>
 
   <footer style="border-top-style: ridge; border-top-color: #263A29; width: 100%; height: 5vh; background-color: black;">
 

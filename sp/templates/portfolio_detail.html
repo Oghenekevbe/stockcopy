@@ -9,7 +9,7 @@
     <div class="row">
       <div class="col">
         <h1>Portfolio Detail</h1>
-        <p><strong>Name:</strong> {{ portfolio.name }}</p>
+        <p><strong>Portfolio Name:</strong> {{ portfolio.name }}</p>
         <p><strong>Owner:</strong> {{ portfolio.owner.username }}</p>
         <p><strong>Portfolio Value:</strong> N{{ portfolio.value|floatformat }}</p>
         <p><strong>Wallet Balance:</strong> N{{ portfolio.wallet|floatformat }}</p>
@@ -34,8 +34,9 @@
         <hr>
 
         <ul>
-          {% for transaction in portfolio.stocktransaction_set.all %}
+          {% for transaction in portfolio.stocktransaction_set.all reversed %}
             <li>
+              Date: {{ transaction.transaction_date }} <br>
               Transaction Type: {{ transaction.get_transaction_type_display }}<br>
               Quantity: {{ transaction.quantity }}<br>
               Price: N{{ transaction.price }}<br>
