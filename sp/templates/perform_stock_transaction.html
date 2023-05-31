@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 
+{% block title %}New Stock Transaction{% endblock title %}
+
 {% block content %}
 <div class="container">
     <div class="row">
@@ -7,7 +9,7 @@
             <form method="post" action="{% url 'perform_stock_transaction' %}">
                 {% csrf_token %}
                 {{ form.as_p }}
-                <button type="submit">Perform Transaction</button>
+                <button type="submit" class="btn btn-secondary">Perform Transaction</button>
               </form>
         </div>
     </div>

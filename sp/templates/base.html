@@ -55,13 +55,9 @@
             </ul>
           </li>
 
-            {% if user.is_superuser %}
-            <li class="nav-item">
-                <a href="{% url 'perform_stock_transaction' %}" class="nav-link  text-light">New Transaction</a>
+           
 
-            </li>
-
-            {% endif %}
+  
           {% else %}
           <li class="nav-item dropdown mx-3">
             <a class="nav-link dropdown-toggle text-light" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" style=" background-color: rgba(93, 156, 89,0.2); border-radius: 5px;">
