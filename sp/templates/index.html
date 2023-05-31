@@ -1,1 +1,29 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Welcome Page{% endblock title %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col" >
+
+                <div class="text">
+                    <p class=" text-light text-justify fs-5 mt-5">
+                        Welcome to our stock trading platform! We provide an intuitive and efficient solution for buying and selling stocks in the market. With our user-friendly interface and powerful tools, you can easily track your investments, analyze market trends, and make informed trading decisions. Whether you're a seasoned investor or just starting your journey in the world of stocks, our platform offers a seamless experience to help you achieve your financial goals. Join our community today and embark on a successful trading journey with us. <br>Start exploring the exciting world of stock trading
+                        <br>
+
+                        <a href="{% url 'register' %}" class="btn btn-success btn-lg mt-3" style="width: 300px;" ><span class=" text-light fw-bold">Join FT<span class=" text-danger">9JA</span> Today!</span></a>
+
+                        
+                    </p>
+                    <hr style="color: red;">
+                </div>
+
+
+        </div>
+    </div>
+</div>
+
+
+{% endblock content %}

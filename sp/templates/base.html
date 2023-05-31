@@ -9,14 +9,14 @@
 
   {% comment %} css styling {% endcomment %}
   <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
-  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <link rel="stylesheet" href="{% static 'css/index.css' %}">
 
   {% comment %} js {% endcomment %}
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.7/dist/umd/popper.min.js" integrity="sha384-zYPOMqeu1DAVkHiLqWBUTcbYfZ8osu1Nd6Z89ify25QV9guujx43ITvfi12/QExE" crossorigin="anonymous"></script>
   <title>{% block title %}{% endblock title %}</title>
 </head>
 
-<body>
+<body id="picture">
 
   <nav class="navbar navbar-expand-lg " style="border-bottom-style: ridge;  border-bottom-color: #263A29; background-color: #013220;">
     <div class="container-fluid">
@@ -80,7 +80,7 @@
       </div>
     </div>
   </nav>
-  <div class="container mt-2 mb-2" style="min-height: 120vh;">
+  <div class="container mt-2 mb-2" style="min-height: 120vh;" >
     <div id='messages'>
         {% if messages %}
         {% for message in messages %}
