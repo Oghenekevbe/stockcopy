@@ -17,6 +17,8 @@ from django.contrib.auth.views import PasswordChangeView
 from django.contrib.auth import authenticate #, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.contrib.auth.mixins import LoginRequiredMixin
+
 
 
 
@@ -45,7 +47,7 @@ class StockListView(ListView):
     template_name = 'stock_list.html'
     context_object_name = 'stocks'
 
-class PortfolioListView(ListView):
+class PortfolioListView(LoginRequiredMixin,ListView):
     model = Portfolio
     template_name = 'portfolio_list.html'
     context_object_name = 'portfolios'
@@ -117,7 +119,7 @@ def stock_transactions_api(request):
 
 
 
-class PortfolioDetailView(DetailView):
+class PortfolioDetailView(LoginRequiredMixin,DetailView):
     model = Portfolio
     template_name = 'portfolio_detail.html'
     context_object_name = 'portfolio'
@@ -149,7 +151,7 @@ class PortfolioDetailView(DetailView):
 
         return context
 
-class StockTransactionView(CreateView):
+class StockTransactionView(LoginRequiredMixin,CreateView):
     form_class = StockTransactionForm
     template_name = 'perform_stock_transaction.html'
 

@@ -10,50 +10,42 @@
       <h3>Portfolio List</h3>
       <hr style="color: red;">
       {% if user.is_authenticated %}
-
-      {% if user.is_superuser %}
-      <button class="btn btn-success mx-3 my-3"><a href="{% url 'perform_stock_transaction' %}" class=" text-light" style="text-decoration: none;">Buy/Sell Stock</a></button>
-      <ul>
-        {% for portfolio in portfolios %}
-        <li>
-          <strong>Portfolio Name:</strong>
-          {{ portfolio.name }}<br>
-          <strong>Owner:</strong>
-          {{ portfolio.owner.username }}<br>
-          <a href="{% url 'portfolio_detail' portfolio.pk %}">View Details</a>
-        </li>
-        {% endfor %}
-      </ul>
-      {% else %}
-        {% if portfolios %}
-        <ul>
-          {% for portfolio in portfolios %}
-  
-          <p>You have N
-            {{ portfolio.wallet }} in your account
-          </p>
-          {% if portfolio.wallet > 0 %}
-          <button class="btn btn-success mx-3 my-3"><a href="{% url 'perform_stock_transaction' %}" class=" text-light" style="text-decoration: none;">Buy/Sell Stock</a></button>
-          {% else %}
-          <p>You have no money in your wallet. Kindly send a mail to egume02@gmail.com</p>
-          {% endif %}
-          <li>
-            <strong>Portfolio Name:</strong>
-            {{ portfolio.name }}<br>
-            <strong>Owner:</strong>
-            {{ portfolio.owner.username }}<br>
-            <a href="{% url 'portfolio_detail' portfolio.pk %}">View Details</a>
-          </li>
-          {% endfor %}
-        </ul>
-  
-
+        {% if user.is_superuser %}
+          <button class="btn btn-success mx-3 my-3"><a href="{% url 'perform_stock_transaction' %}" class="text-light" style="text-decoration: none;">Buy/Sell Stock</a></button>
+          <ul>
+            {% for portfolio in portfolios %}
+              <div class="card" style="margin-top: 10px; padding: 10px; background-color: rgba(225, 225, 225, 0.8); border: 0;">
+                <li style="list-style-type: none;">
+                  <strong>Portfolio Name:</strong> {{ portfolio.name }}<br>
+                  <strong>Owner:</strong> {{ portfolio.owner.username }}<br>
+                  <strong>Wallet Balance:</strong> {{ portfolio.wallet }}
+                  <a href="{% url 'portfolio_detail' portfolio.pk %}">View Details</a>
+                </li>
+              </div>
+            {% endfor %}
+          </ul>
         {% else %}
-        
-          You have no portfolio created for your profile. kindly contact admin.
-        
+          {% if portfolios %}
+            <div class="card" style="margin-top: 10px; padding: 10px; background-color: rgba(225, 225, 225, 0.8); border: 0;">
+              <button class="btn btn-success mx-3 my-3"><a href="{% url 'perform_stock_transaction' %}" class="text-light" style="text-decoration: none;">Buy/Sell Stock</a></button>
+
+              <ul>
+                {% for portfolio in portfolios %}
+                  <li style="list-style-type: none;">
+                    <strong>Portfolio Name:</strong> {{ portfolio.name }}<br>
+                    <strong>Owner:</strong> {{ portfolio.owner.username }}<br>
+                    <strong>Wallet Balance:</strong> {{ portfolio.wallet }}
+                    
+                    
+                    <a href="{% url 'portfolio_detail' portfolio.pk %}">View Details</a>
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% else %}
+            <p>You have no portfolio created for your profile. Kindly contact the admin.</p>
+          {% endif %}
         {% endif %}
-      {% endif %}
       {% endif %}
     </div>
   </div>

@@ -10,57 +10,76 @@
   <div class="container">
     <div class="row">
       <div class="col">
-        <h1>Portfolio Detail</h1>
-        <p><strong>Portfolio Name:</strong> {{ portfolio.name }}</p>
-        <p><strong>Owner:</strong> {{ portfolio.owner.username }}</p>
-        <p><strong>Portfolio Value:</strong> N{{ portfolio.value|floatformat }}</p>
-        <p><strong>Wallet Balance:</strong> N{{ portfolio.wallet|floatformat }}</p>
-      
-        <div>
-          <img src="data:image/png;base64,{{ transaction_history|base64_encode }}" alt="Transaction History">
-        </div>
-      
-<div>
-  <h3>Stocks held by {{portfolio.owner}} </h3>
-  <hr>
-  <ul>
-    {% for stock in portfolio.stocks.all %}
-      <li>{{ stock.name }} - {{ stock.symbol }} <span class="stock-value"> - Current Value: N{{ stock.current_price }}</span></li>
-    {% empty %}
-      <li>No stocks in this portfolio.</li>
-    {% endfor %}
-  </ul>
-</div>
-      
-        <h3>Transaction Details</h3>
-        <hr>
 
-        <ul>
-          {% for transaction in portfolio.stocktransaction_set.all reversed %}
-            <li>
-              Date: {{ transaction.transaction_date }} <br>
-              Transaction Type: {{ transaction.get_transaction_type_display }}<br>
-              Quantity: {{ transaction.quantity }}<br>
-              Price: N{{ transaction.price }}<br>
-            {% if transaction.profit_loss < 0 %}
-              Loss: N{{transaction.profit_loss|floatformat}}
-            {% elif transaction.profit_loss > 0%}
-            Profit: N{{transaction.profit_loss|floatformat}}
-            {% elif transaction.profit_loss == 0 %}
-            No Profit or loss
-            {% endif %}
-            <br>
-            </li>
-          {% empty %}
-            <li>No transactions in this portfolio.</li>
-          {% endfor %}
-        </ul>
-      
-      
+        {% if user.is_authenticated %}
+          {% if portfolio.owner.id == request.user.id %}
+          
+          <h1>Portfolio Detail</h1>
+          <p><strong>Portfolio Name:</strong> {{ portfolio.name }}</p>
+          <p><strong>Owner:</strong> {{ portfolio.owner.username }}</p>
+          <p><strong>Portfolio Value:</strong> N{{ portfolio.value|floatformat }}</p>
+          <p><strong>Wallet Balance:</strong> N{{ portfolio.wallet}}</p>
         
-        <p><a href="{% url 'portfolio_list' %}">Back to Portfolio List</a></p>
-      
-      
+          <div>
+            <img src="data:image/png;base64,{{ transaction_history|base64_encode }}" alt="Transaction History">
+          </div>
+        
+  <div class="card" style="margin-top: 10px; padding: 10px; background-color: rgba(225, 225, 225, 0.8); border: 0;">
+    <div>
+      <h3>Stocks held by {{portfolio.owner}} </h3>
+      <hr>
+      <ul>
+        {% if portfolio.stocks.all and portfolio.portfoliostock_set.first.quantity %}
+        {% for stock in portfolio.stocks.all %}
+          {% with portfolio_stock=stock.portfoliostock_set.first %}
+            {% if portfolio_stock.quantity > 0 %}
+              <li>{{ stock.name }} - {{ portfolio_stock.quantity }} {% if portfolio_stock.quantity <= 1 %}Share{% else %}Shares{% endif %}  @ <span class="stock-value">Current Value: N{{ stock.current_price }} Each</span></li>
+            {% endif %}
+          {% endwith %}
+        {% empty %}
+          <li>No stocks in this portfolio.</li>
+        {% endfor %}
+      {% endif %}
+        </ul>
+      <button class="btn btn-success mx-3 my-3"><a href="{% url 'perform_stock_transaction' %}" class="text-light" style="text-decoration: none;">Buy/Sell Stock</a></button>
+        <hr>
+    </div>
+          
+            <h3>Transaction Details</h3>
+            <hr>
+    
+            <ul>
+              {% for transaction in portfolio.stocktransaction_set.all reversed %}
+                <li>
+                  Date: {{ transaction.transaction_date }} <br>
+                  Transaction Type: {{ transaction.get_transaction_type_display }} {{ transaction.stock.name }} Stocks<br>
+                  Quantity: {{ transaction.quantity }}<br>
+                  Price: N{{ transaction.price }}<br>
+                {% if transaction.profit_loss < 0 %}
+                  Loss: N{{transaction.profit_loss|floatformat}}
+                {% elif transaction.profit_loss > 0%}
+                Profit: N{{transaction.profit_loss|floatformat}}
+                {% elif transaction.profit_loss == 0 %}
+                No Profit or loss
+                {% endif %}
+                <br>
+                </li>
+              {% empty %}
+                <li>No transactions in this portfolio.</li>
+              {% endfor %}
+            </ul>
+          
+          
+            
+            <p><a href="{% url 'portfolio_list' %}">Back to Portfolio List</a></p>
+          
+  </div>
+        
+  
+          {% endif %}
+        
+        {% endif %}
+
       </div>
     </div>
   </div>
