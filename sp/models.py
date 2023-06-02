@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from decimal import Decimal
+
 
 
 class Stock(models.Model):
@@ -64,11 +66,11 @@ class StockTransaction(models.Model):
     def save(self, *args, **kwargs):
         wallet_balance = self.portfolio.wallet
 
-        if self.transaction_type == 'BUY' and self.price * self.quantity > wallet_balance:
+        if self.transaction_type == 'BUY' and self.price * self.quantity > Decimal(wallet_balance.to_decimal()):
             raise ValueError("Insufficient funds in the wallet to perform the transaction.")
 
-        super().save(*args, **kwargs)
-        
+        # Rest of the save method
+
         if self.transaction_type == 'BUY':
             portfolio_stock = self.portfolio.portfoliostock_set.filter(stock=self.stock).first()
             if portfolio_stock:
@@ -76,33 +78,36 @@ class StockTransaction(models.Model):
                 portfolio_stock.save()
             else:
                 PortfolioStock.objects.create(stock=self.stock, portfolio=self.portfolio, quantity=self.quantity)
-            
+
             # Deduct transaction value from the wallet balance
-            self.portfolio.wallet -= self.price * self.quantity
+            wallet_balance = wallet_balance.to_decimal()  # Convert Decimal128 to decimal.Decimal
+            self.portfolio.wallet = Decimal(wallet_balance) - (self.price * self.quantity)
             self.portfolio.save()
         elif self.transaction_type == 'SELL':
             portfolio_stock = self.portfolio.portfoliostock_set.filter(stock=self.stock).first()
             if portfolio_stock:
                 portfolio_stock.quantity -= self.quantity
                 portfolio_stock.save()
-            
+
             # Add transaction value to the wallet balance
-            self.portfolio.wallet += self.price * self.quantity
+            wallet_balance = wallet_balance.to_decimal()  # Convert Decimal128 to decimal.Decimal
+            self.portfolio.wallet = Decimal(wallet_balance) + (self.price * self.quantity)
             self.portfolio.save()
-
-
+        
+        
     @property
     def profit_loss(self):
-        current_value = self.stock.current_price * self.quantity
-        transaction_value = self.price * self.quantity
+        current_value = Decimal(str(self.stock.current_price)) * Decimal(str(self.quantity.to_decimal()))
+
+        transaction_value = self.price.to_decimal() * self.quantity.to_decimal()
+
         if self.transaction_type == 'BUY':
             if transaction_value > current_value:
-                return current_value - transaction_value   # Loss
+                return current_value - transaction_value  # Loss
             else:
                 return current_value - transaction_value  # Profit
         elif self.transaction_type == 'SELL':
             if transaction_value > current_value:
-                return transaction_value - current_value # Profit
+                return transaction_value - current_value  # Profit
             else:
                 return transaction_value - current_value  # Loss
-

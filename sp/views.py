@@ -1,4 +1,4 @@
-from django.http import HttpResponse, JsonResponse,HttpResponseRedirect
+from django.http import HttpResponse, JsonResponse,HttpResponseRedirect,HttpResponseBadRequest
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView
@@ -14,9 +14,10 @@ from datetime import datetime
 from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.views import PasswordChangeView
-from django.urls import reverse_lazy
 from django.contrib.auth import authenticate #, login
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+
 
 
 
@@ -230,6 +231,22 @@ def activate(request, uidb64, token):
         return redirect('index')
     
 
+# Change password view
+@login_required
+def change_password(request):
+    user = request.user
+    if request.method == 'POST':
+        form = ChangePasswordForm(user, request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your password has been changed successfully.')
+            return redirect('login')
+        else:
+            for error in list(form.errors.values()):
+                messages.error(request, error)
+    else:
+        form = ChangePasswordForm(user)
+    return render(request, 'registration/change_password.html', {'form': form})
 
 
 
@@ -265,50 +282,35 @@ def forgot_password(request):
     return render(request, 'registration/forgot_password.html', {'form': form})
 
 
+
+
+
 # Reset password view
 def reset_password(request, uidb64, token):
-    User = get_user_model()
+    print(f"uidb64: {uidb64}, token: {token}")  # Debugging statement
     try:
         uid = urlsafe_base64_decode(uidb64).decode()
-        user = User.objects.get(pk=uid)
-    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-        user = None
+        user = get_user_model().objects.get(pk=uid)
+        print(user.email)
+        print(user.username)
+    except (TypeError, ValueError, OverflowError, get_user_model().DoesNotExist):
+        return HttpResponseBadRequest("Invalid reset password link.")
 
-    if user is not None and account_activation_token.check_token(user, token):
+    if account_activation_token.check_token(user, token):
         if request.method == 'POST':
-            form = ResetPasswordForm(request.POST, user=user)
+            form = ResetPasswordForm(user=user, data=request.POST)
             if form.is_valid():
                 new_password = form.cleaned_data['new_password1']
                 user.set_password(new_password)
                 user.save()
-                messages.success(request, 'Your password has been reset. You may now log in with your new password.')
-                return redirect('login')
-            else:
-                for error in form.errors.values():
-                    messages.error(request, error)
+                messages.success(request, 'Your password has been successfully reset. Kindly enter your new credentials to login')
+                return redirect('login')  # Replace with your success URL
         else:
             form = ResetPasswordForm(user=user)
         return render(request, 'registration/reset_password.html', {'form': form})
     else:
-        messages.error(request, 'Invalid or expired reset password link.')
-        return redirect('index')
-
-# Change password view
-@login_required
-def change_password(request):
-    user = request.user
-    if request.method == 'POST':
-        form = ChangePasswordForm(user, request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Your password has been changed successfully.')
-            return redirect('login')
-        else:
-            for error in list(form.errors.values()):
-                messages.error(request, error)
-    else:
-        form = ChangePasswordForm(user)
-    return render(request, 'registration/change_password.html', {'form': form})
+        return HttpResponseBadRequest("Invalid reset password link.")
+    
 
 
 def reset_password_email(request):
