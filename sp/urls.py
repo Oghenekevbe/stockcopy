@@ -20,6 +20,5 @@ urlpatterns = [
     path('reset_password/<uidb64>/<token>/', views.reset_password, name='reset_password'),
     path('reset_password_email/', views.reset_password_email, name='reset_password_email'),
     path('change-password/', views.change_password, name='change_password'),            
-    path('stock_transactions_api/', views.stock_transactions_api),
 
 ]

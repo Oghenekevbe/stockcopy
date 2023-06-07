@@ -1,22 +1,15 @@
-from django.http import HttpResponse, JsonResponse,HttpResponseRedirect,HttpResponseBadRequest
+from django.http import HttpResponseBadRequest
 from django.shortcuts import redirect, render
-from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from .models import Stock, Portfolio, StockTransaction
 from matplotlib.figure import Figure
 import io
 from .forms import RegistrationForm, ForgotPasswordForm, ResetPasswordForm, ChangePasswordForm, StockTransactionForm
-from django.forms.models import model_to_dict
 from decimal import Decimal
 import json
 from datetime import datetime
-from django.core import serializers
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.views import PasswordChangeView
-from django.contrib.auth import authenticate #, login
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 
@@ -73,49 +66,6 @@ class CustomJSONEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-# def stock_transactions_api(request):
-#     stock_transactions = StockTransaction.objects.all()
-#     serialized_data = serializers.serialize('json', stock_transactions)
-#     return JsonResponse(serialized_data, safe=False)
-
-
-@csrf_exempt
-def stock_transactions_api(request):
-    if request.method == 'GET':
-        # Retrieve existing stock transactions
-        stock_transactions = StockTransaction.objects.all()
-
-        # Serialize the stock transactions into JSON
-        serialized_data = serializers.serialize('json', stock_transactions)
-        return JsonResponse(serialized_data, safe=False)
-
-    elif request.method == 'POST':
-        stock_transactions = StockTransaction.objects.all()
-
-        # Generate random values for transaction_type, stock, portfolio, quantity, price
-        transaction_type = random.choice(['BUY', 'SELL'])
-        stock_id = stock_transactions.stock.id  # Replace with the appropriate logic to get a random stock ID
-        portfolio_id = stock_transactions.portfolio.id  # Replace with the appropriate logic to get a random portfolio ID
-        quantity = random.randint(1, 100)
-        price = round(random.uniform(1, 100), 2) 
-
-        try:
-            # Create a new StockTransaction object
-            stock_transaction = StockTransaction(
-                transaction_type=transaction_type,
-                stock_id=stock_id,
-                portfolio_id=portfolio_id,
-                quantity=quantity,
-                price=price
-            )
-
-            # Save the new transaction
-            stock_transaction.save()
-
-            return JsonResponse({'success': True, 'message': 'Transaction created successfully.'})
-        except ValueError as e:
-            # Error occurred while saving the transaction
-            return JsonResponse({'success': False, 'message': str(e)})
 
 
 
